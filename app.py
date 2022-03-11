@@ -46,7 +46,7 @@ def predict():
 
     predictionVect = model.predict([message])[0]
 
-    resultDict = {"angry": "Angry &#128545", "disgust": "Disgust &#128546", "fear": "Fear &#128547", "happy": "Happy &#128548", "sad": "Sad &#128549", "joy": "Joy &#128563"}
+    resultDict = {"angry": "Angry &#128545;", "disgust": "Disgust &#128546;", "fear": "Fear &#128547;", "happy": "Happy &#128548;", "sad": "Sad &#128549;", "joy": "Joy &#128563;"}
 
     return render_template('userInput.html',prediction=resultDict[predictionVect])
 
