@@ -4,50 +4,67 @@ from nltk.stem import PorterStemmer
 import re
 import pickle
 
-def preprocess_and_tokenize(data):    
 
-    #remove html markup
+def inputPreprocessandtoken(textinput):    
+
+    textinput = re.sub("(<.*?>)", "", textinput)
+    textinput = re.sub(r'http\S+', '', textinput)
+    textinput= re.sub(r"(#[\d\w\.]+)", '', textinput)
+    textinput= re.sub(r"(@[\d\w\.]+)", '', textinput)
+    textinput = re.sub("(\\W|\\d)", " ", textinput)
+    textinput = textinput.strip()
+    textinput = word_tokenize(textinput)
+    porter = PorterStemmer()
+    stemTextmessage = [porter.stem(word) for word in textinput]
+        
+    return stemTextmessage
+
+def textPreprocessFunction(data):    
     data = re.sub("(<.*?>)", "", data)
-
-    #remove urls
     data = re.sub(r'http\S+', '', data)
-    
-    #remove hashtags and @names
     data= re.sub(r"(#[\d\w\.]+)", '', data)
     data= re.sub(r"(@[\d\w\.]+)", '', data)
-
-    #remove punctuation and non-ascii digits
     data = re.sub("(\\W|\\d)", " ", data)
-    
-    #remove whitespace
     data = data.strip()
-    
-    # tokenization with nltk
     data = word_tokenize(data)
-    
-    # stemming with nltk
     porter = PorterStemmer()
-    stem_data = [porter.stem(word) for word in data]
+    stemming_inputdata = [porter.stem(word) for word in data]
         
-    return stem_data
+    return stemming_inputdata
 
-model = pickle.load(open('model\emotion_model.sav', 'rb')) #load the model
 
-app=Flask(__name__) #application
+Model = pickle.load(open('model\suicide_model.sav', 'rb'))
+
+model = pickle.load(open('model\emotion_model.sav', 'rb'))
+app=Flask(__name__) 
 
 @app.route('/')
 def index():
-    return render_template('userInput.html')
+    return render_template('userInput.html',data=[{'cat':'Both'},{'cat':'Emotion'},{'cat':'Suicide'}])
 
-@app.route('/predict',methods=['POST'])
+@app.route('/predict',methods=['GET','POST'])
 def predict():
-
+    user_input=request.form['selection']
     message = request.form['message']
-
+    
     predictionVect = model.predict([message])[0]
+    predVect1 = Model.predict([message])[0]
 
-    resultDict = {"angry": "Angry &#128545;", "disgust": "Disgust &#128546;", "fear": "Fear &#128547;", "happy": "Happy &#128548;", "sad": "Sad &#128549;", "joy": "Joy &#128563;"}
+    resultDict1={"suicide": "Sucide", "non-suicide": "Non-Sucide"}
 
-    return render_template('userInput.html',prediction=resultDict[predictionVect])
+    resultDict = {"angry": "Angry", "disgust": "Disgust", "fear": "Fear", "happy": "Happy", "sad": "Sad ", "joy": "Joy ", "love": "Love"}
 
+    if user_input=='Both':
+        predict=[resultDict[predictionVect],resultDict1[predVect1]]
+        return render_template('userInput.html',predict=predict,user_input=user_input,data=[{'cat':'Both'},{'cat':'Emotion'},{'cat':'Suicide'}])
+    if user_input=='Emotion':
+        predict=[resultDict[predictionVect]]
+        return render_template('userInput.html',predict=predict,user_input=user_input,data=[{'cat':'Both'},{'cat':'Emotion'},{'cat':'Suicide'}])
+    if user_input=='Suicide':
+        predict=[resultDict1[predVect1]]
+        return render_template('userInput.html',predict=predict,user_input=user_input,data=[{'cat':'Both'},{'cat':'Emotion'},{'cat':'Suicide'}])
+    else:
+        print(ValueError)
+    
 app.run(debug=True)
+ 
